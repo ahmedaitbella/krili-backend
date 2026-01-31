@@ -1,5 +1,5 @@
-const dotenv = require('dotenv');
-dotenv.config();
+// Note: On Vercel, environment variables are injected directly via process.env
+// No need for dotenv in production
 
 module.exports = {
   port: process.env.PORT || 3000,

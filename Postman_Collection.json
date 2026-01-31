@@ -1,0 +1,970 @@
+{
+  "info": {
+    "name": "Krili Backend API",
+    "description": "Collection complète des APIs pour tester l'application Krili",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123456\",\n  \"name\": \"Test User\",\n  \"phone\": \"+212612345678\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Google OAuth Login",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/google",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "google"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📧 OTP & 2FA",
+      "item": [
+        {
+          "name": "Send OTP Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/otp/send-otp",
+              "host": ["{{base_url}}"],
+              "path": ["otp", "send-otp"]
+            }
+          }
+        },
+        {
+          "name": "Verify OTP Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/otp/verify-otp",
+              "host": ["{{base_url}}"],
+              "path": ["otp", "verify-otp"]
+            }
+          }
+        },
+        {
+          "name": "Enable TOTP (2FA)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/otp/enable-totp",
+              "host": ["{{base_url}}"],
+              "path": ["otp", "enable-totp"]
+            }
+          }
+        },
+        {
+          "name": "Verify TOTP Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"token\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/otp/verify-totp",
+              "host": ["{{base_url}}"],
+              "path": ["otp", "verify-totp"]
+            }
+          }
+        },
+        {
+          "name": "Disable TOTP (2FA)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/otp/disable-totp",
+              "host": ["{{base_url}}"],
+              "path": ["otp", "disable-totp"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 Users",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"phone\": \"+212612345679\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Get All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Search Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/search?query=test",
+              "host": ["{{base_url}}"],
+              "path": ["users", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "test"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/:userId",
+              "host": ["{{base_url}}"],
+              "path": ["users", ":userId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update User (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated User\",\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/:userId",
+              "host": ["{{base_url}}"],
+              "path": ["users", ":userId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete User (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/:userId",
+              "host": ["{{base_url}}"],
+              "path": ["users", ":userId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛠️ Materiels",
+      "item": [
+        {
+          "name": "Get All Materiels",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/materiels",
+              "host": ["{{base_url}}"],
+              "path": ["materiels"]
+            }
+          }
+        },
+        {
+          "name": "Search Materiels",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/materiels/search?query=perceuse&category=outils",
+              "host": ["{{base_url}}"],
+              "path": ["materiels", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "perceuse"
+                },
+                {
+                  "key": "category",
+                  "value": "outils"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Materiels Nearby",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/materiels/nearby?latitude=33.5731&longitude=-7.5898&distance=10",
+              "host": ["{{base_url}}"],
+              "path": ["materiels", "nearby"],
+              "query": [
+                {
+                  "key": "latitude",
+                  "value": "33.5731"
+                },
+                {
+                  "key": "longitude",
+                  "value": "-7.5898"
+                },
+                {
+                  "key": "distance",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Materiel By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/materiels/:materielId",
+              "host": ["{{base_url}}"],
+              "path": ["materiels", ":materielId"],
+              "variable": [
+                {
+                  "key": "materielId",
+                  "value": "MATERIEL_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Materiel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Perceuse électrique\",\n  \"description\": \"Perceuse professionnelle 800W\",\n  \"category\": \"Outils électriques\",\n  \"pricePerDay\": 50,\n  \"location\": {\n    \"address\": \"Casablanca, Morocco\",\n    \"coordinates\": {\n      \"latitude\": 33.5731,\n      \"longitude\": -7.5898\n    }\n  },\n  \"images\": [\"https://example.com/image1.jpg\"],\n  \"available\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/materiels",
+              "host": ["{{base_url}}"],
+              "path": ["materiels"]
+            }
+          }
+        },
+        {
+          "name": "Update Materiel",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Perceuse électrique mise à jour\",\n  \"pricePerDay\": 45\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/materiels/:materielId",
+              "host": ["{{base_url}}"],
+              "path": ["materiels", ":materielId"],
+              "variable": [
+                {
+                  "key": "materielId",
+                  "value": "MATERIEL_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Materiel",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/materiels/:materielId",
+              "host": ["{{base_url}}"],
+              "path": ["materiels", ":materielId"],
+              "variable": [
+                {
+                  "key": "materielId",
+                  "value": "MATERIEL_ID_HERE"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📝 Rentals",
+      "item": [
+        {
+          "name": "Get All Rentals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rentals",
+              "host": ["{{base_url}}"],
+              "path": ["rentals"]
+            }
+          }
+        },
+        {
+          "name": "Get Rental By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rentals/:rentalId",
+              "host": ["{{base_url}}"],
+              "path": ["rentals", ":rentalId"],
+              "variable": [
+                {
+                  "key": "rentalId",
+                  "value": "RENTAL_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Rental",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"materiel\": \"MATERIEL_ID_HERE\",\n  \"startDate\": \"2026-02-01\",\n  \"endDate\": \"2026-02-05\",\n  \"totalPrice\": 200\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/rentals",
+              "host": ["{{base_url}}"],
+              "path": ["rentals"]
+            }
+          }
+        },
+        {
+          "name": "Update Rental",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"endDate\": \"2026-02-06\",\n  \"totalPrice\": 250\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/rentals/:rentalId",
+              "host": ["{{base_url}}"],
+              "path": ["rentals", ":rentalId"],
+              "variable": [
+                {
+                  "key": "rentalId",
+                  "value": "RENTAL_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Payment Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentStatus\": \"paid\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/rentals/:rentalId/payment",
+              "host": ["{{base_url}}"],
+              "path": ["rentals", ":rentalId", "payment"],
+              "variable": [
+                {
+                  "key": "rentalId",
+                  "value": "RENTAL_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Rental Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/rentals/:rentalId/status",
+              "host": ["{{base_url}}"],
+              "path": ["rentals", ":rentalId", "status"],
+              "variable": [
+                {
+                  "key": "rentalId",
+                  "value": "RENTAL_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Rental",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rentals/:rentalId",
+              "host": ["{{base_url}}"],
+              "path": ["rentals", ":rentalId"],
+              "variable": [
+                {
+                  "key": "rentalId",
+                  "value": "RENTAL_ID_HERE"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⭐ Evaluations",
+      "item": [
+        {
+          "name": "Get All Evaluations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/evaluations",
+              "host": ["{{base_url}}"],
+              "path": ["evaluations"]
+            }
+          }
+        },
+        {
+          "name": "Get User Evaluations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/evaluations/user/:userId",
+              "host": ["{{base_url}}"],
+              "path": ["evaluations", "user", ":userId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Evaluation By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/evaluations/:evaluationId",
+              "host": ["{{base_url}}"],
+              "path": ["evaluations", ":evaluationId"],
+              "variable": [
+                {
+                  "key": "evaluationId",
+                  "value": "EVALUATION_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Evaluation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"evaluatedUser\": \"USER_ID_HERE\",\n  \"rental\": \"RENTAL_ID_HERE\",\n  \"rating\": 5,\n  \"comment\": \"Excellent service, materiel en très bon état!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/evaluations",
+              "host": ["{{base_url}}"],
+              "path": ["evaluations"]
+            }
+          }
+        },
+        {
+          "name": "Update Evaluation",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"comment\": \"Très bon service\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/evaluations/:evaluationId",
+              "host": ["{{base_url}}"],
+              "path": ["evaluations", ":evaluationId"],
+              "variable": [
+                {
+                  "key": "evaluationId",
+                  "value": "EVALUATION_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Evaluation",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/evaluations/:evaluationId",
+              "host": ["{{base_url}}"],
+              "path": ["evaluations", ":evaluationId"],
+              "variable": [
+                {
+                  "key": "evaluationId",
+                  "value": "EVALUATION_ID_HERE"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "❤️ Favorites",
+      "item": [
+        {
+          "name": "Get User Favorites",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/favorites/:userId",
+              "host": ["{{base_url}}"],
+              "path": ["favorites", ":userId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add to Favorites",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"USER_ID_HERE\",\n  \"materielId\": \"MATERIEL_ID_HERE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/favorites/add",
+              "host": ["{{base_url}}"],
+              "path": ["favorites", "add"]
+            }
+          }
+        },
+        {
+          "name": "Remove from Favorites",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"USER_ID_HERE\",\n  \"materielId\": \"MATERIEL_ID_HERE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/favorites/remove",
+              "host": ["{{base_url}}"],
+              "path": ["favorites", "remove"]
+            }
+          }
+        },
+        {
+          "name": "Toggle Favorite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"USER_ID_HERE\",\n  \"materielId\": \"MATERIEL_ID_HERE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/favorites/toggle",
+              "host": ["{{base_url}}"],
+              "path": ["favorites", "toggle"]
+            }
+          }
+        },
+        {
+          "name": "Clear All Favorites",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/favorites/:userId/clear",
+              "host": ["{{base_url}}"],
+              "path": ["favorites", ":userId", "clear"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-const User = require('../models/User');
+import User from "../models/User.js";
 
 // Get all users
 const getAllUsers = async (req, res, next) => {
@@ -10,7 +10,7 @@ const getAllUsers = async (req, res, next) => {
 
     const skip = (page - 1) * limit;
     const users = await User.find(query)
-      .select('-password -otp -otpExpiry -totpSecret')
+      .select("-password -otp -otpExpiry -totpSecret")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit));
@@ -22,8 +22,8 @@ const getAllUsers = async (req, res, next) => {
       pagination: {
         total,
         page: Number(page),
-        pages: Math.ceil(total / limit)
-      }
+        pages: Math.ceil(total / limit),
+      },
     });
   } catch (err) {
     next(err);
@@ -34,11 +34,12 @@ const getAllUsers = async (req, res, next) => {
 const getUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const user = await User.findById(id)
-      .select('-password -otp -otpExpiry -totpSecret');
+    const user = await User.findById(id).select(
+      "-password -otp -otpExpiry -totpSecret",
+    );
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     return res.json({ data: user });
@@ -63,14 +64,14 @@ const updateUser = async (req, res, next) => {
     const user = await User.findByIdAndUpdate(
       id,
       { $set: updates },
-      { new: true, runValidators: true }
-    ).select('-password -otp -otpExpiry -totpSecret');
+      { new: true, runValidators: true },
+    ).select("-password -otp -otpExpiry -totpSecret");
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    return res.json({ message: 'User updated successfully', data: user });
+    return res.json({ message: "User updated successfully", data: user });
   } catch (err) {
     next(err);
   }
@@ -83,10 +84,10 @@ const deleteUser = async (req, res, next) => {
     const user = await User.findByIdAndDelete(id);
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    return res.json({ message: 'User deleted successfully' });
+    return res.json({ message: "User deleted successfully" });
   } catch (err) {
     next(err);
   }
@@ -96,11 +97,12 @@ const deleteUser = async (req, res, next) => {
 const getUserProfile = async (req, res, next) => {
   try {
     // req.user should be set by auth middleware
-    const user = await User.findById(req.user.id)
-      .select('-password -otp -otpExpiry -totpSecret');
+    const user = await User.findById(req.user.id).select(
+      "-password -otp -otpExpiry -totpSecret",
+    );
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     return res.json({ data: user });
@@ -125,14 +127,14 @@ const updateUserProfile = async (req, res, next) => {
     const user = await User.findByIdAndUpdate(
       req.user.id,
       { $set: updates },
-      { new: true, runValidators: true }
-    ).select('-password -otp -otpExpiry -totpSecret');
+      { new: true, runValidators: true },
+    ).select("-password -otp -otpExpiry -totpSecret");
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    return res.json({ message: 'Profile updated successfully', data: user });
+    return res.json({ message: "Profile updated successfully", data: user });
   } catch (err) {
     next(err);
   }
@@ -144,21 +146,21 @@ const searchUsers = async (req, res, next) => {
     const { q, page = 1, limit = 10 } = req.query;
 
     if (!q) {
-      return res.status(400).json({ message: 'Search query is required' });
+      return res.status(400).json({ message: "Search query is required" });
     }
 
     const query = {
       $or: [
-        { name: new RegExp(q, 'i') },
-        { firstName: new RegExp(q, 'i') },
-        { lastName: new RegExp(q, 'i') },
-        { email: new RegExp(q, 'i') }
-      ]
+        { name: new RegExp(q, "i") },
+        { firstName: new RegExp(q, "i") },
+        { lastName: new RegExp(q, "i") },
+        { email: new RegExp(q, "i") },
+      ],
     };
 
     const skip = (page - 1) * limit;
     const users = await User.find(query)
-      .select('-password -otp -otpExpiry -totpSecret')
+      .select("-password -otp -otpExpiry -totpSecret")
       .skip(skip)
       .limit(Number(limit));
 
@@ -169,20 +171,30 @@ const searchUsers = async (req, res, next) => {
       pagination: {
         total,
         page: Number(page),
-        pages: Math.ceil(total / limit)
-      }
+        pages: Math.ceil(total / limit),
+      },
     });
   } catch (err) {
     next(err);
   }
 };
 
-module.exports = {
+export {
   getAllUsers,
   getUserById,
   updateUser,
   deleteUser,
   getUserProfile,
   updateUserProfile,
-  searchUsers
+  searchUsers,
+};
+
+export default {
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
+  getUserProfile,
+  updateUserProfile,
+  searchUsers,
 };

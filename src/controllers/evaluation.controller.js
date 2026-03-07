@@ -1,5 +1,5 @@
-const Evaluation = require('../models/Evaluation');
-const User = require('../models/User');
+import Evaluation from "../models/Evaluation.js";
+import User from "../models/User.js";
 
 // Create new evaluation
 const createEvaluation = async (req, res, next) => {
@@ -7,16 +7,19 @@ const createEvaluation = async (req, res, next) => {
     const evaluation = await Evaluation.create(req.body);
 
     // Update evaluatee's rating
-    const evaluations = await Evaluation.find({ evaluateeId: req.body.evaluateeId });
-    const avgRating = evaluations.reduce((sum, ev) => sum + ev.rating, 0) / evaluations.length;
-    
-    await User.findByIdAndUpdate(req.body.evaluateeId, { 
-      rating: avgRating.toFixed(1) 
+    const evaluations = await Evaluation.find({
+      evaluateeId: req.body.evaluateeId,
+    });
+    const avgRating =
+      evaluations.reduce((sum, ev) => sum + ev.rating, 0) / evaluations.length;
+
+    await User.findByIdAndUpdate(req.body.evaluateeId, {
+      rating: avgRating.toFixed(1),
     });
 
-    return res.status(201).json({ 
-      message: 'Evaluation created successfully', 
-      data: evaluation 
+    return res.status(201).json({
+      message: "Evaluation created successfully",
+      data: evaluation,
     });
   } catch (err) {
     next(err);
@@ -26,13 +29,13 @@ const createEvaluation = async (req, res, next) => {
 // Get all evaluations with filters
 const getAllEvaluations = async (req, res, next) => {
   try {
-    const { 
-      evaluatorId, 
-      evaluateeId, 
-      locationId, 
+    const {
+      evaluatorId,
+      evaluateeId,
+      locationId,
       type,
       page = 1,
-      limit = 10 
+      limit = 10,
     } = req.query;
 
     const query = {};
@@ -43,9 +46,9 @@ const getAllEvaluations = async (req, res, next) => {
 
     const skip = (page - 1) * limit;
     const evaluations = await Evaluation.find(query)
-      .populate('evaluatorId', 'firstName lastName imageUrl')
-      .populate('evaluateeId', 'firstName lastName imageUrl rating')
-      .populate('locationId', 'equipmentId startDate endDate')
+      .populate("evaluatorId", "firstName lastName imageUrl")
+      .populate("evaluateeId", "firstName lastName imageUrl rating")
+      .populate("locationId", "equipmentId startDate endDate")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit));
@@ -57,8 +60,8 @@ const getAllEvaluations = async (req, res, next) => {
       pagination: {
         total,
         page: Number(page),
-        pages: Math.ceil(total / limit)
-      }
+        pages: Math.ceil(total / limit),
+      },
     });
   } catch (err) {
     next(err);
@@ -70,12 +73,12 @@ const getEvaluationById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const evaluation = await Evaluation.findById(id)
-      .populate('evaluatorId', 'firstName lastName imageUrl')
-      .populate('evaluateeId', 'firstName lastName imageUrl rating')
-      .populate('locationId');
+      .populate("evaluatorId", "firstName lastName imageUrl")
+      .populate("evaluateeId", "firstName lastName imageUrl rating")
+      .populate("locationId");
 
     if (!evaluation) {
-      return res.status(404).json({ message: 'Evaluation not found' });
+      return res.status(404).json({ message: "Evaluation not found" });
     }
 
     return res.json({ data: evaluation });
@@ -93,23 +96,30 @@ const updateEvaluation = async (req, res, next) => {
     const evaluation = await Evaluation.findByIdAndUpdate(
       id,
       { $set: updates },
-      { new: true, runValidators: true }
-    ).populate('evaluatorId evaluateeId locationId');
+      { new: true, runValidators: true },
+    ).populate("evaluatorId evaluateeId locationId");
 
     if (!evaluation) {
-      return res.status(404).json({ message: 'Evaluation not found' });
+      return res.status(404).json({ message: "Evaluation not found" });
     }
 
     // Recalculate rating if rating changed
     if (updates.rating) {
-      const evaluations = await Evaluation.find({ evaluateeId: evaluation.evaluateeId });
-      const avgRating = evaluations.reduce((sum, ev) => sum + ev.rating, 0) / evaluations.length;
-      await User.findByIdAndUpdate(evaluation.evaluateeId, { 
-        rating: avgRating.toFixed(1) 
+      const evaluations = await Evaluation.find({
+        evaluateeId: evaluation.evaluateeId,
+      });
+      const avgRating =
+        evaluations.reduce((sum, ev) => sum + ev.rating, 0) /
+        evaluations.length;
+      await User.findByIdAndUpdate(evaluation.evaluateeId, {
+        rating: avgRating.toFixed(1),
       });
     }
 
-    return res.json({ message: 'Evaluation updated successfully', data: evaluation });
+    return res.json({
+      message: "Evaluation updated successfully",
+      data: evaluation,
+    });
   } catch (err) {
     next(err);
   }
@@ -122,21 +132,25 @@ const deleteEvaluation = async (req, res, next) => {
     const evaluation = await Evaluation.findByIdAndDelete(id);
 
     if (!evaluation) {
-      return res.status(404).json({ message: 'Evaluation not found' });
+      return res.status(404).json({ message: "Evaluation not found" });
     }
 
     // Recalculate rating after deletion
-    const evaluations = await Evaluation.find({ evaluateeId: evaluation.evaluateeId });
+    const evaluations = await Evaluation.find({
+      evaluateeId: evaluation.evaluateeId,
+    });
     if (evaluations.length > 0) {
-      const avgRating = evaluations.reduce((sum, ev) => sum + ev.rating, 0) / evaluations.length;
-      await User.findByIdAndUpdate(evaluation.evaluateeId, { 
-        rating: avgRating.toFixed(1) 
+      const avgRating =
+        evaluations.reduce((sum, ev) => sum + ev.rating, 0) /
+        evaluations.length;
+      await User.findByIdAndUpdate(evaluation.evaluateeId, {
+        rating: avgRating.toFixed(1),
       });
     } else {
       await User.findByIdAndUpdate(evaluation.evaluateeId, { rating: 0 });
     }
 
-    return res.json({ message: 'Evaluation deleted successfully' });
+    return res.json({ message: "Evaluation deleted successfully" });
   } catch (err) {
     next(err);
   }
@@ -147,7 +161,7 @@ const getUserEvaluations = async (req, res, next) => {
   try {
     const { userId } = req.params;
     const evaluations = await Evaluation.find({ evaluateeId: userId })
-      .populate('evaluatorId', 'firstName lastName imageUrl')
+      .populate("evaluatorId", "firstName lastName imageUrl")
       .sort({ createdAt: -1 });
 
     return res.json({ data: evaluations });
@@ -156,11 +170,20 @@ const getUserEvaluations = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export {
   createEvaluation,
   getAllEvaluations,
   getEvaluationById,
   updateEvaluation,
   deleteEvaluation,
-  getUserEvaluations
+  getUserEvaluations,
+};
+
+export default {
+  createEvaluation,
+  getAllEvaluations,
+  getEvaluationById,
+  updateEvaluation,
+  deleteEvaluation,
+  getUserEvaluations,
 };

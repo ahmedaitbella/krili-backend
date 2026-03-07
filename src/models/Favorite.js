@@ -1,11 +1,11 @@
-const { Schema, model, Types } = require("mongoose");
+import { Schema, model, Types } from "mongoose";
 
 const FavoriteSchema = new Schema(
   {
     userId: { type: Types.ObjectId, ref: "User", required: true, index: true },
-    materialIds: [{ type: Types.ObjectId, ref: "Materiel" }],
+    equipmentIds: [{ type: Types.ObjectId, ref: "Equipment" }],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-module.exports = model("Favorite", FavoriteSchema);
+export default model("Favorite", FavoriteSchema);

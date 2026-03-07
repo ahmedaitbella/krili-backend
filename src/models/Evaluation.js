@@ -1,4 +1,4 @@
-const { Schema, model, Types } = require("mongoose");
+import { Schema, model, Types } from "mongoose";
 
 const EvaluationSchema = new Schema({
   locationId: { type: Types.ObjectId, ref: "Rental" },
@@ -10,4 +10,4 @@ const EvaluationSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-module.exports = model("Evaluation", EvaluationSchema);
+export default model("Evaluation", EvaluationSchema);

@@ -1,22 +1,22 @@
-const Joi = require('joi');
+import Joi from "joi";
 
 const addToFavoritesSchema = Joi.object({
   userId: Joi.string().required(),
-  materialId: Joi.string().required()
+  equipmentId: Joi.string().required(),
 });
 
 const removeFromFavoritesSchema = Joi.object({
   userId: Joi.string().required(),
-  materialId: Joi.string().required()
+  equipmentId: Joi.string().required(),
 });
 
 const toggleFavoriteSchema = Joi.object({
   userId: Joi.string().required(),
-  materialId: Joi.string().required()
+  materialId: Joi.string().required(),
 });
 
-module.exports = {
+export {
   addToFavoritesSchema,
   removeFromFavoritesSchema,
-  toggleFavoriteSchema
+  toggleFavoriteSchema,
 };

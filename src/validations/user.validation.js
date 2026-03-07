@@ -1,4 +1,4 @@
-const Joi = require('joi');
+import Joi from "joi";
 
 const updateUserSchema = Joi.object({
   name: Joi.string().min(2),
@@ -11,12 +11,10 @@ const updateUserSchema = Joi.object({
     neighborhood: Joi.string(),
     coords: Joi.object({
       lat: Joi.number(),
-      lng: Joi.number()
-    })
+      lng: Joi.number(),
+    }),
   }),
-  role: Joi.string().valid('tenant', 'owner', 'both', 'user')
+  role: Joi.string().valid("tenant", "owner", "both", "user"),
 });
 
-module.exports = {
-  updateUserSchema
-};
+export { updateUserSchema };

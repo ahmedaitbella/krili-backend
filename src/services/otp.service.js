@@ -1,5 +1,5 @@
-const speakeasy = require('speakeasy');
-const QRCode = require('qrcode');
+import speakeasy from "speakeasy";
+import QRCode from "qrcode";
 
 const generateOTP = () => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -22,7 +22,7 @@ const verifyOTP = (otp, storedOtp, expiryTime) => {
 const generateTOTPSecret = (email) => {
   const secret = speakeasy.generateSecret({
     name: `Your App (${email})`,
-    length: 32
+    length: 32,
   });
 
   return secret;
@@ -31,9 +31,9 @@ const generateTOTPSecret = (email) => {
 const verifyTOTP = (token, secret) => {
   const verified = speakeasy.totp.verify({
     secret: secret,
-    encoding: 'base32',
+    encoding: "base32",
     token: token,
-    window: 2 // Allow 30 seconds before and after
+    window: 2, // Allow 30 seconds before and after
   });
 
   return verified;
@@ -44,14 +44,14 @@ const generateQRCode = async (secret) => {
     const qrCode = await QRCode.toDataURL(secret.otpauth_url);
     return qrCode;
   } catch (error) {
-    throw new Error('Failed to generate QR code');
+    throw new Error("Failed to generate QR code");
   }
 };
 
-module.exports = {
+export {
   generateOTP,
   verifyOTP,
   generateTOTPSecret,
   verifyTOTP,
-  generateQRCode
+  generateQRCode,
 };

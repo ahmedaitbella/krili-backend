@@ -1,10 +1,18 @@
-const express = require('express');
+import express from "express";
+import passport from "passport";
+import googleController from "../controllers/google.controller.js";
+
 const router = express.Router();
-const passport = require('passport');
-const googleController = require('../controllers/google.controller');
 
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] }),
+);
 
-router.get('/google/callback', passport.authenticate('google', { session: false }), googleController.googleCallback);
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { session: false }),
+  googleController.googleCallback,
+);
 
-module.exports = router;
+export default router;

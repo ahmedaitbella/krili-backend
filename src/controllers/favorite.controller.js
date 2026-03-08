@@ -1,9 +1,10 @@
+import mongoose from "mongoose";
 import Favorite from "../models/Favorite.js";
 
 // Get user favorites
 const getUserFavorites = async (req, res, next) => {
   try {
-    const { userId } = req.params;
+    const userId = req.user.id;
 
     let favorite = await Favorite.findOne({ userId }).populate(
       "equipmentIds",
@@ -23,7 +24,16 @@ const getUserFavorites = async (req, res, next) => {
 // Add equipment to favorites
 const addToFavorites = async (req, res, next) => {
   try {
-    const { userId, equipmentId } = req.body;
+    const userId = req.user.id;
+    const { equipmentId } = req.body;
+
+    if (!equipmentId) {
+      return res.status(400).json({ message: "equipmentId is required" });
+    }
+
+    if (!mongoose.isValidObjectId(equipmentId)) {
+      return res.status(400).json({ message: "Invalid equipmentId" });
+    }
 
     let favorite = await Favorite.findOne({ userId });
 
@@ -33,8 +43,11 @@ const addToFavorites = async (req, res, next) => {
         equipmentIds: [equipmentId],
       });
     } else {
-      // Check if already in favorites
-      if (favorite.equipmentIds.includes(equipmentId)) {
+      // Check if already in favorites (compare as strings to handle ObjectId)
+      const alreadyIn = favorite.equipmentIds.some(
+        (id) => id.toString() === equipmentId,
+      );
+      if (alreadyIn) {
         return res
           .status(400)
           .json({ message: "Equipment already in favorites" });
@@ -61,7 +74,8 @@ const addToFavorites = async (req, res, next) => {
 // Remove equipment from favorites
 const removeFromFavorites = async (req, res, next) => {
   try {
-    const { userId, equipmentId } = req.body;
+    const userId = req.user.id;
+    const { equipmentId } = req.body;
 
     const favorite = await Favorite.findOne({ userId });
 
@@ -91,11 +105,11 @@ const removeFromFavorites = async (req, res, next) => {
 // Clear all favorites
 const clearFavorites = async (req, res, next) => {
   try {
-    const { userId } = req.params;
+    const userId = req.user.id;
 
     const favorite = await Favorite.findOneAndUpdate(
       { userId },
-      { $set: { materialIds: [] } },
+      { $set: { equipmentIds: [] } },
       { new: true },
     );
 
@@ -115,17 +129,18 @@ const clearFavorites = async (req, res, next) => {
 // Toggle favorite (add or remove)
 const toggleFavorite = async (req, res, next) => {
   try {
-    const { userId, materialId } = req.body;
+    const userId = req.user.id;
+    const { equipmentId } = req.body;
 
     let favorite = await Favorite.findOne({ userId });
 
     if (!favorite) {
       favorite = await Favorite.create({
         userId,
-        materialIds: [materialId],
+        equipmentIds: [equipmentId],
       });
       await favorite.populate(
-        "materialIds",
+        "equipmentIds",
         "name category pricePerDay images address owner rating",
       );
       return res.json({
@@ -135,15 +150,20 @@ const toggleFavorite = async (req, res, next) => {
       });
     }
 
-    const index = favorite.materialIds.findIndex(
-      (id) => id.toString() === materialId,
+    // ensure equipmentIds is an array to avoid runtime crashes
+    favorite.equipmentIds = Array.isArray(favorite.equipmentIds)
+      ? favorite.equipmentIds
+      : [];
+
+    const index = favorite.equipmentIds.findIndex(
+      (id) => id.toString() === equipmentId,
     );
 
     if (index > -1) {
-      favorite.materialIds.splice(index, 1);
+      favorite.equipmentIds.splice(index, 1);
       await favorite.save();
       await favorite.populate(
-        "materialIds",
+        "equipmentIds",
         "name category pricePerDay images address owner rating",
       );
       return res.json({
@@ -152,10 +172,10 @@ const toggleFavorite = async (req, res, next) => {
         action: "removed",
       });
     } else {
-      favorite.materialIds.push(materialId);
+      favorite.equipmentIds.push(equipmentId);
       await favorite.save();
       await favorite.populate(
-        "materialIds",
+        "equipmentIds",
         "name category pricePerDay images address owner rating",
       );
       return res.json({

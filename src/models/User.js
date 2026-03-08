@@ -23,7 +23,7 @@ const UserSchema = new Schema({
   address: UserAddressSchema,
   role: {
     type: String,
-    enum: ["tenant", "owner", "both", "user"],
+    enum: ["tenant", "owner", "both"],
     default: "tenant",
   },
   rating: { type: Number, default: 0 },
@@ -42,9 +42,8 @@ const UserSchema = new Schema({
   resetPasswordToken: { type: String },
   resetPasswordExpiry: { type: Date },
 
-  // TOTP (Time-based One-Time Password / 2FA)
-  totpSecret: { type: String },
-  totpEnabled: { type: Boolean, default: false },
+  // Refresh token (stored as SHA-256 hash for security)
+  refreshTokenHash: { type: String, default: null },
 
   createdAt: { type: Date, default: Date.now },
 });

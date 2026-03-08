@@ -1,5 +1,6 @@
 import Equipment from "../models/Equipment.js";
 import User from "../models/User.js";
+import mongoose from "mongoose";
 
 // Helper to normalize equipment owner info
 const normalizeOwnerOnEquipment = async (equipment) => {
@@ -14,8 +15,7 @@ const normalizeOwnerOnEquipment = async (equipment) => {
   let owner = null;
 
   if (ownerSrc) {
-    const id =
-      ownerSrc._1d || ownerSrc._id || ownerSrc.id || ownerSrc.ownerId || null;
+    const id = ownerSrc._id || ownerSrc.id || ownerSrc.ownerId || null;
     if (!ownerSrc.name && id) {
       const userDoc = await User.findById(id)
         .select("firstName lastName name")
@@ -37,7 +37,7 @@ const normalizeOwnerOnEquipment = async (equipment) => {
 // Create new equipment
 const createEquipment = async (req, res, next) => {
   try {
-    const { ownerId } = req.body;
+    const ownerId = req.user.id;
 
     // Get owner details
     const owner = await User.findById(ownerId);
@@ -48,6 +48,7 @@ const createEquipment = async (req, res, next) => {
     // Add owner details to equipment
     const equipmentData = {
       ...req.body,
+      ownerId,
       owner: {
         id: owner._id,
         name: owner.name || `${owner.firstName} ${owner.lastName}`,
@@ -116,6 +117,10 @@ const getAllEquipments = async (req, res, next) => {
 const getEquipmentById = async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!id || !mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid equipment id" });
+    }
+
     const equipment = await Equipment.findById(id).populate(
       "ownerId",
       "firstName lastName email phone imageUrl rating",
@@ -135,21 +140,29 @@ const getEquipmentById = async (req, res, next) => {
 const updateEquipment = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    if (!id || !mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid equipment id" });
+    }
 
-    const equipment = await Equipment.findByIdAndUpdate(
-      id,
-      { $set: updates },
-      { new: true, runValidators: true },
-    );
-
+    const equipment = await Equipment.findById(id);
     if (!equipment) {
       return res.status(404).json({ message: "Equipment not found" });
     }
+    if (equipment.ownerId.toString() !== req.user.id.toString()) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to update this equipment" });
+    }
+
+    const updated = await Equipment.findByIdAndUpdate(
+      id,
+      { $set: req.body },
+      { new: true, runValidators: true },
+    );
 
     return res.json({
       message: "Equipment updated successfully",
-      data: equipment,
+      data: updated,
     });
   } catch (err) {
     next(err);
@@ -160,11 +173,20 @@ const updateEquipment = async (req, res, next) => {
 const deleteEquipment = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const equipment = await Equipment.findByIdAndDelete(id);
+    if (!id || !mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid equipment id" });
+    }
 
+    const equipment = await Equipment.findById(id);
     if (!equipment) {
       return res.status(404).json({ message: "Equipment not found" });
     }
+    if (equipment.ownerId.toString() !== req.user.id.toString()) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this equipment" });
+    }
+    await Equipment.findByIdAndDelete(id);
 
     return res.json({ message: "Equipment deleted successfully" });
   } catch (err) {
@@ -195,7 +217,7 @@ const searchEquipments = async (req, res, next) => {
     const total = await Equipment.countDocuments(query);
 
     return res.json({
-      data: equipments.map(normalizeOwnerOnEquipment),
+      data: await Promise.all(equipments.map(normalizeOwnerOnEquipment)),
       pagination: {
         total,
         page: Number(page),
@@ -218,24 +240,40 @@ const getEquipmentsByLocation = async (req, res, next) => {
         .json({ message: "Latitude and longitude are required" });
     }
 
-    const skip = (page - 1) * limit;
-    const equipments = await Equipment.find({
-      "address.coords": {
-        $near: {
-          $geometry: {
-            type: "Point",
-            coordinates: [Number(lng), Number(lat)],
-          },
-          $maxDistance: Number(maxDistance),
-        },
+    // Convert maxDistance (metres) to approximate degree deltas for bounding box
+    // 1 degree latitude ≈ 111 km; longitude degree depends on latitude
+    const maxDistKm = Number(maxDistance) / 1000;
+    const latDelta = maxDistKm / 111;
+    const lngDelta =
+      maxDistKm / (111 * Math.cos((Number(lat) * Math.PI) / 180));
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const query = {
+      "address.coords.lat": {
+        $gte: Number(lat) - latDelta,
+        $lte: Number(lat) + latDelta,
       },
-    })
-      .populate("ownerId", "firstName lastName imageUrl rating")
-      .skip(skip)
-      .limit(Number(limit));
+      "address.coords.lng": {
+        $gte: Number(lng) - lngDelta,
+        $lte: Number(lng) + lngDelta,
+      },
+    };
+
+    const [equipments, total] = await Promise.all([
+      Equipment.find(query)
+        .populate("ownerId", "firstName lastName imageUrl rating")
+        .skip(skip)
+        .limit(Number(limit)),
+      Equipment.countDocuments(query),
+    ]);
 
     return res.json({
       data: await Promise.all(equipments.map(normalizeOwnerOnEquipment)),
+      pagination: {
+        total,
+        page: Number(page),
+        pages: Math.ceil(total / Number(limit)),
+      },
     });
   } catch (err) {
     next(err);

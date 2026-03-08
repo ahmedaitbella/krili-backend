@@ -4,17 +4,19 @@ import User from "../models/User.js";
 // Create new evaluation
 const createEvaluation = async (req, res, next) => {
   try {
-    const evaluation = await Evaluation.create(req.body);
+    // Always use the authenticated user as the evaluator
+    const evaluationData = { ...req.body, evaluatorId: req.user.id };
+    const evaluation = await Evaluation.create(evaluationData);
 
     // Update evaluatee's rating
     const evaluations = await Evaluation.find({
-      evaluateeId: req.body.evaluateeId,
+      evaluateeId: evaluationData.evaluateeId,
     });
     const avgRating =
       evaluations.reduce((sum, ev) => sum + ev.rating, 0) / evaluations.length;
 
-    await User.findByIdAndUpdate(req.body.evaluateeId, {
-      rating: avgRating.toFixed(1),
+    await User.findByIdAndUpdate(evaluationData.evaluateeId, {
+      rating: parseFloat(avgRating.toFixed(1)),
     });
 
     return res.status(201).json({
@@ -46,8 +48,8 @@ const getAllEvaluations = async (req, res, next) => {
 
     const skip = (page - 1) * limit;
     const evaluations = await Evaluation.find(query)
-      .populate("evaluatorId", "firstName lastName imageUrl")
-      .populate("evaluateeId", "firstName lastName imageUrl rating")
+      .populate("evaluatorId", "name imageUrl")
+      .populate("evaluateeId", "name imageUrl rating")
       .populate("locationId", "equipmentId startDate endDate")
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -73,8 +75,8 @@ const getEvaluationById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const evaluation = await Evaluation.findById(id)
-      .populate("evaluatorId", "firstName lastName imageUrl")
-      .populate("evaluateeId", "firstName lastName imageUrl rating")
+      .populate("evaluatorId", "name imageUrl")
+      .populate("evaluateeId", "name imageUrl rating")
       .populate("locationId");
 
     if (!evaluation) {
@@ -112,7 +114,7 @@ const updateEvaluation = async (req, res, next) => {
         evaluations.reduce((sum, ev) => sum + ev.rating, 0) /
         evaluations.length;
       await User.findByIdAndUpdate(evaluation.evaluateeId, {
-        rating: avgRating.toFixed(1),
+        rating: parseFloat(avgRating.toFixed(1)),
       });
     }
 
@@ -144,7 +146,7 @@ const deleteEvaluation = async (req, res, next) => {
         evaluations.reduce((sum, ev) => sum + ev.rating, 0) /
         evaluations.length;
       await User.findByIdAndUpdate(evaluation.evaluateeId, {
-        rating: avgRating.toFixed(1),
+        rating: parseFloat(avgRating.toFixed(1)),
       });
     } else {
       await User.findByIdAndUpdate(evaluation.evaluateeId, { rating: 0 });
@@ -161,7 +163,7 @@ const getUserEvaluations = async (req, res, next) => {
   try {
     const { userId } = req.params;
     const evaluations = await Evaluation.find({ evaluateeId: userId })
-      .populate("evaluatorId", "firstName lastName imageUrl")
+      .populate("evaluatorId", "name imageUrl")
       .sort({ createdAt: -1 });
 
     return res.json({ data: evaluations });

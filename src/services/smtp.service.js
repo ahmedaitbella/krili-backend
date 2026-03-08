@@ -5,6 +5,7 @@ import {
   smtpUser,
   smtpPassword,
   smtpFromEmail,
+  smtpConfigured,
 } from "../config/env.js";
 
 const portNumber = Number(smtpPort) || 587;
@@ -31,6 +32,11 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendOTPEmail = async (email, otp, fullName) => {
+  if (!smtpConfigured) {
+    throw new Error(
+      "Email service is not configured on this server. Please contact support.",
+    );
+  }
   try {
     const mailOptions = {
       from: smtpFromEmail,
@@ -54,37 +60,60 @@ const sendOTPEmail = async (email, otp, fullName) => {
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error("Error sending OTP email:", error);
-    throw new Error("Failed to send OTP email");
+    throw new Error("Failed to send OTP email: " + (error.message || ""));
   }
 };
 
 const sendWelcomeEmail = async (email, fullName) => {
+  if (!smtpConfigured) {
+    console.warn("[SMTP] Not configured — skipping welcome email to", email);
+    return { success: false, skipped: true };
+  }
   try {
     const mailOptions = {
       from: smtpFromEmail,
       to: email,
-      subject: "Welcome to Our Platform",
+      subject: "Bienvenue sur Krili ! 🎉",
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Welcome ${fullName}!</h2>
-          <p>Thank you for registering on our platform.</p>
-          <p>Your account has been successfully created.</p>
-          <p><a href="https://yourapp.com/login" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Login Now</a></p>
-          <hr />
-          <p style="color: #666; font-size: 12px;">© 2026 Your Company. All rights reserved.</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 32px; border-radius: 8px;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #e85d04; margin: 0;">Krili</h1>
+            <p style="color: #888; font-size: 13px; margin-top: 4px;">La plateforme de location d'équipements entre particuliers au Maroc</p>
+          </div>
+          <h2 style="color: #222;">Bienvenue, ${fullName} !</h2>
+          <p style="color: #444; line-height: 1.6;">Votre compte a été créé avec succès. Vous pouvez désormais :</p>
+          <ul style="color: #444; line-height: 2;">
+            <li>🔍 Parcourir des milliers d'équipements disponibles</li>
+            <li>📦 Louer du matériel près de chez vous</li>
+            <li>💰 Proposer vos propres équipements à la location</li>
+          </ul>
+          <div style="text-align: center; margin-top: 28px;">
+            <a href="${process.env.FRONTEND_URL || "https://krili.vercel.app"}" style="background-color: #e85d04; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Commencer à explorer</a>
+          </div>
+          <hr style="margin-top: 32px; border: none; border-top: 1px solid #eee;" />
+          <p style="color: #aaa; font-size: 11px; text-align: center;">© ${new Date().getFullYear()} Krili. Tous droits réservés.</p>
         </div>
       `,
     };
-
     const info = await transporter.sendMail(mailOptions);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error("Error sending welcome email:", error);
-    throw new Error("Failed to send welcome email");
+    // Welcome email is non-critical — log but don't throw
+    console.error(
+      "[SMTP] Failed to send welcome email to",
+      email,
+      error.message,
+    );
+    return { success: false, error: error.message };
   }
 };
 
 const sendPasswordResetEmail = async (email, resetLink, fullName) => {
+  if (!smtpConfigured) {
+    throw new Error(
+      "Email service is not configured on this server. Password reset emails cannot be sent.",
+    );
+  }
   try {
     const mailOptions = {
       from: smtpFromEmail,

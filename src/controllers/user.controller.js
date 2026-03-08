@@ -10,7 +10,7 @@ const getAllUsers = async (req, res, next) => {
 
     const skip = (page - 1) * limit;
     const users = await User.find(query)
-      .select("-password -otp -otpExpiry -totpSecret")
+      .select("-password -otp -otpExpiry")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit));
@@ -34,9 +34,7 @@ const getAllUsers = async (req, res, next) => {
 const getUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const user = await User.findById(id).select(
-      "-password -otp -otpExpiry -totpSecret",
-    );
+    const user = await User.findById(id).select("-password -otp -otpExpiry");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -52,20 +50,26 @@ const getUserById = async (req, res, next) => {
 const updateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
+
+    // Only the user themselves or an admin may update a user record
+    if (req.user.id.toString() !== id && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
     const updates = req.body;
 
-    // Remove sensitive fields from updates
+    // Remove sensitive fields from updates (including role to prevent privilege escalation)
     delete updates.password;
     delete updates.otp;
     delete updates.otpExpiry;
-    delete updates.totpSecret;
     delete updates.googleId;
+    delete updates.role;
 
     const user = await User.findByIdAndUpdate(
       id,
       { $set: updates },
       { new: true, runValidators: true },
-    ).select("-password -otp -otpExpiry -totpSecret");
+    ).select("-password -otp -otpExpiry");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -81,6 +85,12 @@ const updateUser = async (req, res, next) => {
 const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
+
+    // Only the user themselves or an admin may delete a user record
+    if (req.user.id.toString() !== id && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
     const user = await User.findByIdAndDelete(id);
 
     if (!user) {
@@ -98,7 +108,7 @@ const getUserProfile = async (req, res, next) => {
   try {
     // req.user should be set by auth middleware
     const user = await User.findById(req.user.id).select(
-      "-password -otp -otpExpiry -totpSecret",
+      "-password -otp -otpExpiry",
     );
 
     if (!user) {
@@ -121,14 +131,13 @@ const updateUserProfile = async (req, res, next) => {
     delete updates.email;
     delete updates.otp;
     delete updates.otpExpiry;
-    delete updates.totpSecret;
     delete updates.googleId;
 
     const user = await User.findByIdAndUpdate(
       req.user.id,
       { $set: updates },
       { new: true, runValidators: true },
-    ).select("-password -otp -otpExpiry -totpSecret");
+    ).select("-password -otp -otpExpiry");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -160,7 +169,7 @@ const searchUsers = async (req, res, next) => {
 
     const skip = (page - 1) * limit;
     const users = await User.find(query)
-      .select("-password -otp -otpExpiry -totpSecret")
+      .select("-password -otp -otpExpiry")
       .skip(skip)
       .limit(Number(limit));
 

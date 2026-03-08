@@ -1,7 +1,6 @@
 import Joi from "joi";
 
 const createEquipmentSchema = Joi.object({
-  ownerId: Joi.string().required(),
   name: Joi.string().min(3).required(),
   description: Joi.string().allow(""),
   category: Joi.string()

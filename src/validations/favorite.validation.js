@@ -12,7 +12,7 @@ const removeFromFavoritesSchema = Joi.object({
 
 const toggleFavoriteSchema = Joi.object({
   userId: Joi.string().required(),
-  materialId: Joi.string().required(),
+  equipmentId: Joi.string().required(),
 });
 
 export {

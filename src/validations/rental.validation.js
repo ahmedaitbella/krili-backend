@@ -1,11 +1,10 @@
 import Joi from "joi";
 
 const createRentalSchema = Joi.object({
-  renterId: Joi.string().required(),
   equipmentId: Joi.string().required(),
   startDate: Joi.date().required(),
   endDate: Joi.date().greater(Joi.ref("startDate")).required(),
-  stripeSessionId: Joi.string(),
+  stripePaymentIntentId: Joi.string(),
   renterComment: Joi.string(),
   ownerComment: Joi.string(),
 });

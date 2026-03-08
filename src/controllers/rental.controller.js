@@ -1,10 +1,12 @@
 import Rental from "../models/Rental.js";
 import Equipment from "../models/Equipment.js";
+import Payment from "../models/Payment.js";
 
 // Create new rental
 const createRental = async (req, res, next) => {
   try {
-    const { equipmentId, renterId, startDate, endDate } = req.body;
+    const { equipmentId, startDate, endDate, stripePaymentIntentId } = req.body;
+    const renterId = req.user.id;
 
     // Check if equipment exists and is available
     const equipment = await Equipment.findById(equipmentId);
@@ -16,6 +18,28 @@ const createRental = async (req, res, next) => {
       return res.status(400).json({ message: "Equipment is not available" });
     }
 
+    // ── Date overlap check ────────────────────────────────────────────────
+    // Reject if there is already an active rental whose dates intersect with
+    // the requested window.  Two intervals [s1,e1] and [s2,e2] overlap when
+    // s1 < e2 AND e1 > s2.
+    const overlapping = await Rental.findOne({
+      equipmentId,
+      rentalStatus: { $nin: ["cancelled", "completed"] },
+      startDate: { $lt: new Date(endDate) },
+      endDate: { $gt: new Date(startDate) },
+    });
+    if (overlapping) {
+      return res.status(409).json({
+        message:
+          "Equipment is already booked for the selected dates. Please choose different dates.",
+        conflictingRental: {
+          startDate: overlapping.startDate,
+          endDate: overlapping.endDate,
+        },
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
     // Calculate rental details
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -26,14 +50,28 @@ const createRental = async (req, res, next) => {
 
     const rentalData = {
       ...req.body,
+      renterId,
       ownerId: equipment.ownerId,
       numberOfDays,
       rentalAmount,
       depositAmount,
       totalAmount,
+      // If a Stripe PaymentIntent was provided, store it and mark as paid
+      ...(stripePaymentIntentId && {
+        stripeSessionId: stripePaymentIntentId,
+        paymentStatus: "paid",
+      }),
     };
 
     const rental = await Rental.create(rentalData);
+
+    // Link the rental to its Payment record (if paid via Stripe)
+    if (stripePaymentIntentId) {
+      await Payment.findOneAndUpdate(
+        { stripePaymentIntentId },
+        { rentalId: rental._id },
+      );
+    }
 
     // Update equipment status
     await Equipment.findByIdAndUpdate(equipmentId, {
@@ -72,8 +110,8 @@ const getAllRentals = async (req, res, next) => {
 
     const skip = (page - 1) * limit;
     const rentals = await Rental.find(query)
-      .populate("renterId", "firstName lastName email phone imageUrl")
-      .populate("ownerId", "firstName lastName email phone imageUrl")
+      .populate("renterId", "name email phone imageUrl")
+      .populate("ownerId", "name email phone imageUrl")
       .populate("equipmentId", "name category pricePerDay images")
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -99,8 +137,8 @@ const getRentalById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const rental = await Rental.findById(id)
-      .populate("renterId", "firstName lastName email phone imageUrl rating")
-      .populate("ownerId", "firstName lastName email phone imageUrl rating")
+      .populate("renterId", "name email phone imageUrl rating")
+      .populate("ownerId", "name email phone imageUrl rating")
       .populate("equipmentId");
 
     if (!rental) {

@@ -1,15 +1,27 @@
-import authService from "../services/auth.service.js";
+import authService, { hashToken } from "../services/auth.service.js";
 import { registerSchema, loginSchema } from "../validations/auth.validation.js";
 import User from "../models/User.js";
 import crypto from "crypto";
-import { sendPasswordResetEmail } from "../services/smtp.service.js";
-import { hashPassword } from "../utils/password.js";
+import {
+  sendPasswordResetEmail,
+  sendWelcomeEmail,
+} from "../services/smtp.service.js";
+import { hashPassword, comparePassword } from "../utils/password.js";
 import { frontendUrl } from "../config/env.js";
+import {
+  verifyRefreshToken,
+  signAccessToken,
+  signRefreshToken,
+} from "../utils/jwt.js";
 
 async function register(req, res, next) {
   try {
     await registerSchema.validateAsync(req.body);
-    const { user, token } = await authService.register(req.body);
+    const { user, token, refreshToken } = await authService.register(req.body);
+    // Send welcome email non-blocking (don't fail registration if email fails)
+    sendWelcomeEmail(user.email, user.name || req.body.fullName || "").catch(
+      (err) => console.error("[register] welcome email error:", err.message),
+    );
     return res.status(201).json({
       user: {
         id: user._id,
@@ -19,6 +31,7 @@ async function register(req, res, next) {
         phone: user.phone,
       },
       token,
+      refreshToken,
     });
   } catch (err) {
     next(err);
@@ -28,7 +41,7 @@ async function register(req, res, next) {
 async function login(req, res, next) {
   try {
     await loginSchema.validateAsync(req.body);
-    const { user, token } = await authService.login(req.body);
+    const { user, token, refreshToken } = await authService.login(req.body);
     return res.json({
       user: {
         id: user._id,
@@ -38,6 +51,7 @@ async function login(req, res, next) {
         phone: user.phone,
       },
       token,
+      refreshToken,
     });
   } catch (err) {
     next(err);
@@ -107,5 +121,92 @@ async function resetPassword(req, res) {
   }
 }
 
-export { register, login, forgotPassword, resetPassword };
-export default { register, login, forgotPassword, resetPassword };
+async function changePassword(req, res) {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.password) {
+      return res.status(400).json({
+        message: "Cannot change password for social login accounts",
+      });
+    }
+
+    const isValid = await comparePassword(currentPassword, user.password);
+    if (!isValid) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    user.password = await hashPassword(newPassword);
+    await user.save();
+
+    return res.json({ message: "Password changed successfully" });
+  } catch (err) {
+    console.error("changePassword error", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export { register, login, forgotPassword, resetPassword, changePassword };
+export default {
+  register,
+  login,
+  forgotPassword,
+  resetPassword,
+  changePassword,
+};
+
+/**
+ * POST /auth/refresh
+ * Accepts a refresh token, verifies it, rotates it, and returns a new access token.
+ */
+export async function refreshToken(req, res) {
+  const { refreshToken: token } = req.body;
+  if (!token)
+    return res.status(401).json({ message: "Refresh token required" });
+
+  try {
+    const payload = verifyRefreshToken(token);
+    const hashed = hashToken(token);
+    const user = await User.findOne({
+      _id: payload.id,
+      refreshTokenHash: hashed,
+    });
+    if (!user)
+      return res
+        .status(401)
+        .json({ message: "Invalid or revoked refresh token" });
+
+    // Rotate: issue fresh pair
+    const newAccessToken = signAccessToken({ id: user._id });
+    const newRefreshToken = signRefreshToken({ id: user._id });
+    user.refreshTokenHash = hashToken(newRefreshToken);
+    await user.save();
+
+    return res.json({ token: newAccessToken, refreshToken: newRefreshToken });
+  } catch {
+    return res
+      .status(401)
+      .json({ message: "Invalid or expired refresh token" });
+  }
+}
+
+/**
+ * POST /auth/logout  (requires verifyToken)
+ * Invalidates the stored refresh token hash so it can no longer be used.
+ */
+export async function logoutUser(req, res) {
+  if (req.user?.id) {
+    await User.findByIdAndUpdate(req.user.id, { refreshTokenHash: null });
+  }
+  return res.json({ message: "Logged out successfully" });
+}

@@ -19,7 +19,21 @@ export const smtpPort = process.env.SMTP_PORT || 587;
 export const smtpUser = process.env.SMTP_USER;
 export const smtpPassword = process.env.SMTP_PASSWORD;
 export const smtpFromEmail = process.env.SMTP_FROM_EMAIL;
+// True only when all three required SMTP credentials are present
+export const smtpConfigured = !!(smtpUser && smtpPassword && smtpFromEmail);
+if (!smtpConfigured) {
+  console.warn(
+    "⚠️  SMTP not fully configured (SMTP_USER / SMTP_PASSWORD / SMTP_FROM_EMAIL missing). " +
+      "Password reset and OTP emails will fail. Set these variables to enable email delivery.",
+  );
+}
 // OTP Configuration
 export const otpExpiry = process.env.OTP_EXPIRY || 10; // minutes
 // Frontend URL used for password reset links
 export const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+// Stripe
+export const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
+export const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
+// JWT Refresh
+export const jwtRefreshSecret =
+  process.env.JWT_REFRESH_SECRET || "change_me_refresh_secret";

@@ -36,16 +36,27 @@ if (!googleClientId || !googleClientSecret || !googleCallbackUrl) {
       async (accessToken, refreshToken, profile, done) => {
         try {
           let user = await User.findOne({ googleId: profile.id });
+          let isNewUser = false;
           if (!user) {
-            user = await User.create({
-              name: profile.displayName,
-              email: profile.emails[0].value,
-              googleId: profile.id,
-              role: "user",
-            });
+            // Also try to find by email in case the user registered normally first
+            user = await User.findOne({ email: profile.emails[0].value });
+            if (user) {
+              // Link the Google account to the existing user
+              user.googleId = profile.id;
+              await user.save();
+            } else {
+              user = await User.create({
+                name: profile.displayName,
+                email: profile.emails[0].value,
+                googleId: profile.id,
+                role: "tenant",
+                isEmailVerified: true,
+              });
+              isNewUser = true;
+            }
           }
           const token = signToken({ id: user._id });
-          return done(null, { user, token });
+          return done(null, { user, token, isNewUser });
         } catch (err) {
           return done(err, null);
         }

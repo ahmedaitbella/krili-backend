@@ -245,17 +245,25 @@ const updateRentalStatus = async (req, res, next) => {
     const { id } = req.params;
     const { rentalStatus } = req.body;
 
-    const rental = await Rental.findByIdAndUpdate(
+    const rental = await Rental.findById(id);
+    if (!rental) {
+      return res.status(404).json({ message: "Rental not found" });
+    }
+
+    // Reset equipment to available when a rental is cancelled or completed
+    if (rentalStatus === "cancelled" || rentalStatus === "completed") {
+      await Equipment.findByIdAndUpdate(rental.equipmentId, {
+        status: "available",
+      });
+    }
+
+    const updated = await Rental.findByIdAndUpdate(
       id,
       { $set: { rentalStatus } },
       { new: true },
     );
 
-    if (!rental) {
-      return res.status(404).json({ message: "Rental not found" });
-    }
-
-    return res.json({ message: "Rental status updated", data: rental });
+    return res.json({ message: "Rental status updated", data: updated });
   } catch (err) {
     next(err);
   }
